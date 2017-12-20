@@ -69,8 +69,8 @@ func createTunnal(lAddr, rAddr, pAddr string) (net.Conn,net.Conn) {
 	for {
 		pConn, err = net.Dial("tcp", pAddr)
 		if err == nil {
-			pConn.Write([]byte("CONNECT 192.168.44.122:6666 HTTP/1.1\r\n\r\n"))                                                                                                                                                                                                                                                                                      
-			log.Println("[→]", "connect [" + pAddr + "] success.")
+			pConn.Write([]byte("CONNECT " + lAddr + " HTTP/1.1\r\n\r\n"))                                                                                                                                                                                                                                                                                      
+			log.Println("[→]", "connect [" + lAddr + "] success.")
 			break
 		} else {
 			log.Println("[x]", "connect target address [" + pAddr + "] faild. retry... ")
