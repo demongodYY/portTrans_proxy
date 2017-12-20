@@ -1,6 +1,7 @@
 package portconnect
 
 import (
+	// "io/ioutil"
 	"io"
 	"log"
 	"net"
@@ -19,6 +20,7 @@ func Forward(conn1 net.Conn, conn2 net.Conn) {
 }
 
 func connCopy(conn1 net.Conn, conn2 net.Conn, wg *sync.WaitGroup) {
+	log.Println("[←!!!]", "begin the connect at local:["+conn1.LocalAddr().String()+"] and remote:["+conn1.RemoteAddr().String()+"]")
 	io.Copy(conn1, conn2)
 	conn1.Close()
 	log.Println("[←]", "close the connect at local:["+conn1.LocalAddr().String()+"] and remote:["+conn1.RemoteAddr().String()+"]")

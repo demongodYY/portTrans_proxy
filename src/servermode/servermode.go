@@ -50,3 +50,26 @@ func accept(listener net.Listener) net.Conn {
 	log.Println("[√]", "accept a new client. remote address:["+conn.RemoteAddr().String()+"], local address:["+conn.LocalAddr().String()+"]")
 	return conn
 }
+func Port2host(allowPort string, targetAddress string) {
+	server := createListenPort("0.0.0.0:" + allowPort)
+	for {
+		conn := accept(server)
+		// if conn == nil {
+		// 	continue
+		// }
+		log.Println("pass!!!!!!")
+		log.Println("[+]", "start connect host:["+targetAddress+"]")
+		target, err := net.Dial("tcp", "192.168.44.123:808")
+		if err != nil {
+			// temporarily unavailable, don't use fatal.
+			log.Println("[x]", "connect target address ["+targetAddress+"] faild. retry in ", timeout, "seconds. ")
+			conn.Close()
+			log.Println("[←]", "close the connect at local:["+conn.LocalAddr().String()+"] and remote:["+conn.RemoteAddr().String()+"]")
+			time.Sleep(timeout * time.Second)
+			return
+		}
+		target.Write([]byte("CONNECT 192.168.44.122:6666 HTTP/1.1\r\n\r\n"))
+		log.Println("[→]", "connect target address ["+targetAddress+"] success.")
+		portconnect.Forward(conn, target)
+	}
+}
