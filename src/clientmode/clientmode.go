@@ -8,6 +8,7 @@ import (
 )
 
 const timeout = 5
+const waitTime = 1
 
 /*
 	funcName: InitClient
@@ -58,7 +59,7 @@ func InitClient(lAddr, rAddr string) {
 func InitClientThroughPoxy(lAddr, rAddr, pAddr string) {
 	for {
 		pConn, rConn := createTunnal(lAddr, rAddr, pAddr)
-		time.Sleep(3 * time.Second) //a bad method
+		time.Sleep(waitTime * time.Second)
 		portconnect.Forward(pConn, rConn)
 	}
 }
@@ -66,10 +67,21 @@ func InitClientThroughPoxy(lAddr, rAddr, pAddr string) {
 func createTunnal(lAddr, rAddr, pAddr string) (net.Conn,net.Conn) {
 	var rConn,pConn net.Conn
 	var err error
+	httpHeader := make([]byte, 256)
+	httpHeaderLen := 0
 	for {
 		pConn, err = net.Dial("tcp", pAddr)
 		if err == nil {
-			pConn.Write([]byte("CONNECT " + lAddr + " HTTP/1.1\r\n\r\n"))                                                                                                                                                                                                                                                                                      
+			pConn.Write([]byte("CONNECT " + lAddr + " HTTP/1.1\r\n\r\n"))
+			time.Sleep(waitTime * time.Second)
+			for {
+				httpHeaderLen, _ = pConn.Read(httpHeader)
+				if httpHeaderLen > 0{
+					log.Println ("proxy header length: ", httpHeaderLen)
+					log.Println (pAddr + ": ", string(httpHeader))
+					break
+				}
+			}
 			log.Println("[→]", "connect [" + lAddr + "] success.")
 			break
 		} else {

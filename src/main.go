@@ -6,10 +6,10 @@ import (
 	"os"
 )
 func main() {
-	flagServerMode := flag.Bool("s", false, "use server mode")
-	flagClientMode := flag.Bool("c", false, "use client mode")
-	flagTransMode := flag.Bool("t", false, "use trans mode")
-	flagProxyClientMode := flag.Bool("pc", false, "use proxy client mode")
+	flagServerMode := flag.Bool("s", false, "use server mode (ex: tr.exe -s lServerPort rServerPort)")
+	flagClientMode := flag.Bool("c", false, "use client mode (ex: tr.exe -c rServerIp:port targetIp:port)")
+	flagTransMode := flag.Bool("t", false, "use trans mode (ex: tr.exe -c lPort targetIp:port)")
+	flagProxyClientMode := flag.Bool("pc", false, "use proxy client mode (ex: tr.exe -pc rServerIp:port targetIp:port proxyIp:port)")
 
 	flag.Parse()
 	switch {

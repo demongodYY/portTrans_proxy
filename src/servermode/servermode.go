@@ -54,12 +54,11 @@ func Port2host(allowPort string, targetAddress string) {
 	server := createListenPort("0.0.0.0:" + allowPort)
 	for {
 		conn := accept(server)
-		// if conn == nil {
-		// 	continue
-		// }
-		log.Println("pass!!!!!!")
+		 if conn == nil {
+		 	continue
+		 }
 		log.Println("[+]", "start connect host:["+targetAddress+"]")
-		target, err := net.Dial("tcp", "192.168.44.123:808")
+		target, err := net.Dial("tcp", targetAddress)
 		if err != nil {
 			// temporarily unavailable, don't use fatal.
 			log.Println("[x]", "connect target address ["+targetAddress+"] faild. retry in ", timeout, "seconds. ")
@@ -68,7 +67,6 @@ func Port2host(allowPort string, targetAddress string) {
 			time.Sleep(timeout * time.Second)
 			return
 		}
-		target.Write([]byte("CONNECT 192.168.44.122:6666 HTTP/1.1\r\n\r\n"))
 		log.Println("[→]", "connect target address ["+targetAddress+"] success.")
 		portconnect.Forward(conn, target)
 	}
