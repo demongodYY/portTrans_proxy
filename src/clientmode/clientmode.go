@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 	"net"
+	"encoding/base64"
 )
 
 const timeout = 5
@@ -19,29 +20,8 @@ const waitTime = 1
 
 func InitClient(lAddr, rAddr string) {
 	for {
-		var lConn, rConn net.Conn
-		var err error
-		for {
-			lConn, err = net.Dial("tcp", lAddr)
-			if err == nil {
-				log.Println("[→]", "connect [" + lAddr + "] success.")
-				break
-			} else {
-				log.Println("[x]", "connect target address [" + lAddr + "] faild. retry... ")
-				time.Sleep(timeout * time.Second)
-			}
-		
-		}
-		for {
-			rConn, err = net.Dial("tcp", rAddr)
-			if err == nil {
-				log.Println("[→]", "connect [" + rAddr + "] success.")
-				break
-			} else {
-				log.Println("[x]", "connect target address [" + rAddr + "] faild. retry...")
-				time.Sleep(timeout * time.Second)
-			}
-		}
+		lConn, rConn := createPipe(lAddr, rAddr)
+		time.Sleep(waitTime * time.Second)
 		portconnect.Forward(lConn, rConn)
 	}
 }
@@ -56,29 +36,56 @@ func InitClient(lAddr, rAddr string) {
 				pPass(string): proxy-auth-password
 */
 
-func InitClientThroughPoxy(lAddr, rAddr, pAddr string) {
+func InitClientThroughPoxy(lAddr, rAddr, pAddr, proxyStr string) {
 	for {
-		pConn, rConn := createTunnal(lAddr, rAddr, pAddr)
+		pConn, rConn := createTunnal(lAddr, rAddr, pAddr, proxyStr)
 		time.Sleep(waitTime * time.Second)
 		portconnect.Forward(pConn, rConn)
 	}
 }
 
-func createTunnal(lAddr, rAddr, pAddr string) (net.Conn,net.Conn) {
+func createPipe(lAddr, rAddr string ) (net.Conn,net.Conn) {
+	var lConn, rConn net.Conn
+	var err error
+	for {
+		lConn, err = net.Dial("tcp", lAddr)
+		if err == nil {
+			log.Println("[→]", "connect [" + lAddr + "] success.")
+			break
+		} else {
+			log.Println("[x]", "connect target address [" + lAddr + "] faild. retry... ")
+			time.Sleep(timeout * time.Second)
+		}
+	}
+	for {
+		rConn, err = net.Dial("tcp", rAddr)
+		if err == nil {
+			log.Println("[→]", "connect [" + rAddr + "] success.")
+			break
+		} else {
+			log.Println("[x]", "connect target address [" + rAddr + "] faild. retry...")
+			time.Sleep(timeout * time.Second)
+		}
+	}
+	return lConn, rConn
+}
+
+
+func createTunnal(lAddr, rAddr, pAddr, proxyStr string) (net.Conn,net.Conn) {
 	var rConn,pConn net.Conn
 	var err error
-	httpHeader := make([]byte, 256)
-	httpHeaderLen := 0
+	httpResHeader := make([]byte, 256)
+	httpResHeaderLen := 0
 	for {
 		pConn, err = net.Dial("tcp", pAddr)
 		if err == nil {
-			pConn.Write([]byte("CONNECT " + lAddr + " HTTP/1.1\r\n\r\n"))
+			pConn.Write([]byte(createHttpReqHead(proxyStr, lAddr)))
 			time.Sleep(waitTime * time.Second)
 			for {
-				httpHeaderLen, _ = pConn.Read(httpHeader)
-				if httpHeaderLen > 0{
-					log.Println ("proxy header length: ", httpHeaderLen)
-					log.Println (pAddr + ": ", string(httpHeader))
+				httpResHeaderLen, _ = pConn.Read(httpResHeader)
+				if httpResHeaderLen > 0{
+					log.Println ("proxy header length: ", httpResHeaderLen)
+					log.Println (pAddr + ": ", string(httpResHeader))
 					break
 				}
 			}
@@ -100,4 +107,15 @@ func createTunnal(lAddr, rAddr, pAddr string) (net.Conn,net.Conn) {
 		}
 	}
 	return pConn, rConn
+}
+
+func createHttpReqHead(proxyStr, lAddr string) string {
+	httpReqHeader := "CONNECT " + lAddr + " HTTP/1.1\r\n"
+	if len(proxyStr) > 0 {
+		proxyData := []byte(proxyStr)
+		base64ProxyStr := base64.StdEncoding.EncodeToString(proxyData)
+		httpReqHeader += "Proxy-Authorization: Basic " + base64ProxyStr + "\r\n"
+	}
+	httpReqHeader += "\r\n"
+	return httpReqHeader
 }
